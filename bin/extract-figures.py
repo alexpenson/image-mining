@@ -63,7 +63,6 @@ def display_images(extractor, files):
 
                 cv2.polylines(output, bbox.poly, True, (32, 192, 32), thickness=3)
                 cv2.drawContours(output, contours, bbox.contour_index, (32, 192, 32), hierarchy=hierarchy, maxLevel=0)
-
                 cv2.rectangle(output, (bbox.x1, bbox.y1), (bbox.x2, bbox.y2), color=(32, 192, 192))
 
             cv2.imshow(name, output)
@@ -95,6 +94,8 @@ if __name__ == "__main__":
     mode_group = parser.add_mutually_exclusive_group(required=True)
     mode_group.add_argument('--interactive', default=False, action="store_true", help="Display visualization windows")
     mode_group.add_argument('--output-directory', default=None, help="Directory to store extracted files")
+
+    parser.add_argument('--border-size', type=int, default=0)
 
     parser.add_argument('--save-json', action="store_true", help="Save bounding boxes as JSON files along with extracts")
 
@@ -149,8 +150,14 @@ if __name__ == "__main__":
                 print "Processing %s" % f
 
                 boxes = []
+                border = args.border_size
+                figures = extractor.find_figures(source_image)
+                for i, bbox in enumerate(figures, 1):
+                    bbox.x1 = max(0, bbox.x1 - border)
+                    bbox.y1 = max(0, bbox.y1 - border)
+                    bbox.x2 = min(source_image.shape[1], bbox.x2 + border)
+                    bbox.y2 = min(source_image.shape[0], bbox.y2 + border)
 
-                for i, bbox in enumerate(extractor.find_figures(source_image), 1):
                     extracted = source_image[bbox.image_slice]
                     extract_filename = os.path.join(output_dir, "%s-%d.jpg" % (output_base, i))
                     print "\tSaving %s" % extract_filename
